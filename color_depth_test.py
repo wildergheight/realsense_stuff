@@ -11,6 +11,7 @@ import pyrealsense2 as rs
 import numpy as np
 # Import OpenCV for easy image rendering
 import cv2
+import math
 
 x_coord = 50
 y_coord = 50
@@ -107,15 +108,33 @@ try:
         # rgb_value_center = color_image[y_coord, x_coord]
         rgb_value_center = color_image[x_coord, y_coord]
         depth_at_center = depth_image[x_coord, y_coord]
+        if depth_at_center == 0:
+            depth_at_center = 6000
 
         HFOV = 69
         VFOV = 42
         center_of_image = [640, 360]
 
-        h_angle = ((y_coord-center_of_image[0])/center_of_image[0])*(HFOV/2)
-        v_angle = ((x_coord - center_of_image[1]) / center_of_image[1]) * (VFOV / 2)
+        h_angle = ((y_coord - center_of_image[0]) / center_of_image[0]) * (HFOV / 2)
+        v_angle = ((x_coord - center_of_image[1]) / center_of_image[1]) * -(VFOV / 2)
         # print(h_angle)
         print(v_angle)
+
+        v_angle_rad = math.radians(v_angle)
+        test_height_diff_mm = 50
+
+        if (v_angle_rad < 0):
+            num = (test_height_diff_mm - (math.sin(-v_angle_rad)) * depth_at_center)
+            denom = ((math.cos(-v_angle_rad)) * depth_at_center)
+
+        else:
+            num = ((math.sin(v_angle_rad)) * depth_at_center + test_height_diff_mm)
+            denom = ((math.cos(v_angle_rad)) * depth_at_center)
+
+        laser_angle = (math.atan2(num, denom))
+        laser_angle_deg = math.degrees(laser_angle)
+        print(laser_angle_deg)
+
         # print(rgb_value_center)
 
         # Create a circular mask
@@ -178,7 +197,7 @@ try:
             diff_b = abs(stored_b - average_color[0])
 
             # if diff_r > 20 or diff_b > 20 or diff_g > 20:
-                # print("HAND DETECTED")
+            # print("HAND DETECTED")
 
         cv2.imshow('Align Example', images)
 
